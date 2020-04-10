@@ -1,9 +1,9 @@
 <b>A python app using Flask, deploying on kubernetes</b>
 
-## kubernetes deployment
+## kubernetes local deployment
 ```kubectl create -f deployment.yaml```
 
-## docker deployment
+## docker local deployment
 - Build python service image
 ```
 cd api
