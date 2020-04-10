@@ -1,4 +1,4 @@
-# python-k8s-backend
+<b>A python app using Flask, deploying on kubernetes</b>
 
 # kubernetes deployment
 ```kubectl create -f deployment.yaml```
