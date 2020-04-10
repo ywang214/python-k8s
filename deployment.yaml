@@ -1,0 +1,130 @@
+apiVersion: "apps/v1"
+kind: "Deployment"
+metadata:
+  name: "flask"
+  namespace: "default"
+  labels:
+    app: "flask"
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: "flask"
+  template:
+    metadata:
+      labels:
+        app: "flask"
+    spec:
+      containers:
+        - name: "flask"
+          image: "ywang214/flask:latest"
+          env:
+            - name: "DATABASE_URL"
+              valueFrom:
+                configMapKeyRef:
+                  key: "DATABASE_URL"
+                  name: "postgres-config"
+
+---
+apiVersion: "v1"
+kind: "Service"
+metadata:
+  name: "api-service"
+  namespace: "default"
+  labels:
+    app: "flask"
+spec:
+  ports:
+    - protocol: "TCP"
+      port: 5000
+      targetPort: 5000
+  selector:
+    app: "flask"
+  type: "LoadBalancer"
+  loadBalancerIP: ""
+
+---
+apiVersion: "v1"
+kind: "ConfigMap"
+metadata:
+  name: "postgres-config"
+  namespace: "default"
+  labels:
+    app: "postgres"
+data:
+  POSTGRES_DB: "postgres"
+  POSTGRES_USER: "postgres"
+  POSTGRES_PASSWORD: "postgres"
+  DATABASE_URL: "postgres://postgres:postgres@postgres:5432/test"
+
+---
+apiVersion: "apps/v1"
+kind: "Deployment"
+metadata:
+  name: "postgres"
+  namespace: "default"
+  labels:
+    app: "postgres"
+spec:
+  replicas: 2
+  selector:
+    matchLabels:
+      app: "postgres"
+  template:
+    metadata:
+      labels:
+        app: "postgres"
+    spec:
+      containers:
+        - name: "postgres"
+          image: "ywang214/postgres:latest"
+          env:
+            - name: "POSTGRES_DB"
+              valueFrom:
+                configMapKeyRef:
+                  key: "POSTGRES_DB"
+                  name: "postgres-config"
+            - name: "POSTGRES_USER"
+              valueFrom:
+                configMapKeyRef:
+                  key: "POSTGRES_USER"
+                  name: "postgres-config"
+            - name: "POSTGRES_PASSWORD"
+              valueFrom:
+                configMapKeyRef:
+                  key: "POSTGRES_PASSWORD"
+                  name: "postgres-config"
+          ports:
+            - containerPort: 5432
+              name: postgres
+          volumeMounts:
+            - name: postgres-storage
+              mountPath: /var/lib/postgresql/db-data
+      volumes:
+        - name: postgres-storage
+          persistentVolumeClaim:
+            claimName: postgres-pv-claim
+
+---
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  name: postgres-pv-claim
+spec:
+  accessModes:
+    - ReadWriteOnce
+  resources:
+    requests:
+      storage: 5Gi
+
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: postgres
+spec:
+  type: NodePort
+  ports:
+    - port: 5432
+  selector:
+    app: postgres

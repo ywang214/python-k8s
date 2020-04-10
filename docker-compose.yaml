@@ -1,0 +1,25 @@
+version: "2.1"
+
+services:
+  api:
+    container_name: flask
+    image: python-api:latest
+    ports:
+      - 5000:5000
+    environment:
+      - APP_SETTING=development
+      - DATABASE_URL=postgres://postgres:postgres@postgres:5432/test
+    volumes:
+      - "/docker-compose-v2"
+    depends_on:
+      - database
+
+  database:
+    container_name: postgres
+    image: postgres:latest
+    ports:
+      - 5432:5432
+    environment:
+      - POSTGRES_USER=postgres
+      - POSTGRES_PASSWORD=postgres
+      - POSTGRES_DB=postgres
